@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Backend Demo — Login</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="nav" id="nav"></div>
+
+<div class="wrap">
+  <h1>Login</h1>
+  <div class="sub">Calls <code>POST /auth/login</code> and stores the returned JWT for this browser.</div>
+
+  <div class="panel">
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email" required />
+      <input type="password" id="loginPassword" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <div class="footer-link">No account yet? <a href="register.html">Register</a></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+  renderNav("login.html");
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("loginMsg");
+    try {
+      const { res, body } = await apiFetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: document.getElementById("loginEmail").value,
+          password: document.getElementById("loginPassword").value,
+        }),
+      });
+      if (res.ok && body?.token) {
+        setToken(body.token);
+        showMsg(msg, "Logged in — redirecting to Users…", true);
+        renderNav("login.html");
+        setTimeout(() => { window.location.href = "users.html"; }, 700);
+      } else {
+        showMsg(msg, body?.error || `Failed (${res.status})`, false);
+      }
+    } catch (err) {
+      showMsg(msg, "Could not reach server — is it running at " + getBaseUrl() + "?", false);
+    }
+  });
+</script>
+</body>
+</html>

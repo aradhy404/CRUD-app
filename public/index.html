@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Backend Demo — Home</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="nav" id="nav"></div>
+
+<div class="wrap">
+  <h1>Backend Demo</h1>
+  <div class="sub">A thin client for your Express + PostgreSQL + JWT API. Set the server URL below — it's saved for every page.</div>
+
+  <div class="panel">
+    <div class="config">
+      <label for="baseUrl">API base URL</label>
+      <input id="baseUrl" />
+    </div>
+    <button id="checkBtn" class="secondary" type="button">Check connection</button>
+    <div class="msg" id="checkMsg"></div>
+  </div>
+
+  <div class="footer-link">
+    Go to <a href="register.html">Register</a> or <a href="login.html">Login</a> to get started.
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+  renderNav("index.html");
+  wireBaseUrlInput();
+
+  document.getElementById("checkBtn").addEventListener("click", async () => {
+    const msg = document.getElementById("checkMsg");
+    try {
+      const { res } = await apiFetch("/users");
+      if (res.ok || res.status === 401) {
+        showMsg(msg, "Server reached at " + getBaseUrl() + " — looks alive.", true);
+      } else {
+        showMsg(msg, `Server responded with ${res.status} — check your routes.`, false);
+      }
+    } catch (err) {
+      showMsg(msg, "Could not reach server — is it running at " + getBaseUrl() + "?", false);
+    }
+  });
+</script>
+</body>
+</html>

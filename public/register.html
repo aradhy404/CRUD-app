@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Backend Demo — Register</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="nav" id="nav"></div>
+
+<div class="wrap">
+  <h1>Register</h1>
+  <div class="sub">Creates a new user via <code>POST /auth/register</code>.</div>
+
+  <div class="panel">
+    <form id="registerForm">
+      <input type="text" id="regName" placeholder="Name" required />
+      <input type="email" id="regEmail" placeholder="Email" required />
+      <input type="password" id="regPassword" placeholder="Password" required />
+      <button type="submit">Register</button>
+    </form>
+    <div class="msg" id="registerMsg"></div>
+  </div>
+
+  <div class="footer-link">Already registered? <a href="login.html">Log in</a></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+  renderNav("register.html");
+
+  document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("registerMsg");
+    try {
+      const { res, body } = await apiFetch("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: document.getElementById("regName").value,
+          email: document.getElementById("regEmail").value,
+          password: document.getElementById("regPassword").value,
+        }),
+      });
+      if (res.ok) {
+        showMsg(msg, "Registered — you can log in now.", true);
+        e.target.reset();
+      } else {
+        showMsg(msg, body?.error || `Failed (${res.status})`, false);
+      }
+    } catch (err) {
+      showMsg(msg, "Could not reach server — is it running at " + getBaseUrl() + "?", false);
+    }
+  });
+</script>
+</body>
+</html>

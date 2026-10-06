@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Backend Demo — Users</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="nav" id="nav"></div>
+
+<div class="wrap wide">
+  <h1>Users</h1>
+  <div class="sub"><code>GET /users</code> to list, <code>DELETE /users/:id</code> (protected, needs login) to remove.</div>
+
+  <div class="panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+      <span id="authState" style="font-size:0.85rem; color:var(--muted);"></span>
+      <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+    </div>
+    <div id="usersArea"><div class="empty">Loading…</div></div>
+    <div class="msg" id="usersMsg"></div>
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+  renderNav("users.html");
+
+  function updateAuthState() {
+    const el = document.getElementById("authState");
+    el.textContent = getToken()
+      ? "Logged in — delete is enabled."
+      : "Not logged in — you can view users, but delete is blocked until you log in.";
+  }
+  updateAuthState();
+
+  async function loadUsers() {
+    const area = document.getElementById("usersArea");
+    const msg = document.getElementById("usersMsg");
+    msg.className = "msg";
+    try {
+      const { res, body } = await apiFetch("/users");
+      if (!res.ok) {
+        showMsg(msg, body?.error || `Failed (${res.status})`, false);
+        return;
+      }
+      if (!Array.isArray(body) || body.length === 0) {
+        area.innerHTML = '<div class="empty">No users yet.</div>';
+        return;
+      }
+      const rows = body.map(u => `
+        <tr>
+          <td>${u.id}</td>
+          <td>${escapeHtml(u.name)}</td>
+          <td>${escapeHtml(u.email)}</td>
+          <td><button class="danger" data-id="${u.id}">Delete</button></td>
+        </tr>
+      `).join("");
+      area.innerHTML = `
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Email</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+      area.querySelectorAll("button[data-id]").forEach(btn => {
+        btn.addEventListener("click", () => deleteUser(btn.dataset.id));
+      });
+    } catch (err) {
+      showMsg(msg, "Could not reach server — is it running at " + getBaseUrl() + "?", false);
+    }
+  }
+
+  async function deleteUser(id) {
+    const msg = document.getElementById("usersMsg");
+    const token = getToken();
+    if (!token) {
+      showMsg(msg, "Log in first — delete is a protected route.", false);
+      return;
+    }
+    try {
+      const { res, body } = await apiFetch(`/users/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + token },
+      });
+      if (res.ok) {
+        showMsg(msg, "Deleted user " + id + ".", true);
+        loadUsers();
+      } else {
+        showMsg(msg, body?.error || `Failed (${res.status})`, false);
+      }
+    } catch (err) {
+      showMsg(msg, "Could not reach server.", false);
+    }
+  }
+
+  document.getElementById("refreshBtn").addEventListener("click", loadUsers);
+  loadUsers();
+</script>
+</body>
+</html>
