@@ -1,9 +1,9 @@
-import bcrypt from "bcrypt"
 import express from "express"
 import cookieParser from "cookie-parser"
 import  pool  from "./database/db.js"
 import authroutes from "./routes/auth.js"
 import authMiddleware from "./middleware/auth.js"
+import postroute from "./routes/post.js"
 
 
 const app = express()
@@ -13,6 +13,7 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(express.static("public"))
 
+app.use('/post',postroute)
 app.use('/auth', authroutes)
 
 
