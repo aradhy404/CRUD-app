@@ -1,9 +1,9 @@
 # User Auth API
-
+ 
 A small backend built from scratch with Express and PostgreSQL, with full JWT-based authentication and a minimal vanilla JS demo frontend.
-
+ 
 ## What this is
-
+ 
 A REST API for managing users, with:
 - Full CRUD on a `users` table (Create, Read, Update, Delete)
 - Password hashing with `bcrypt` — passwords are never stored in plain text
@@ -11,19 +11,17 @@ A REST API for managing users, with:
 - Route-level auth middleware — some routes (update/delete) require a valid token
 - Parameterized SQL queries throughout — no string-concatenated SQL, to prevent SQL injection
 - A plain HTML/JS frontend (no framework) that demonstrates calling the API, storing the JWT, and attaching it to protected requests
-
 This was built to learn backend fundamentals properly — every route was written, run, and debugged from scratch, not copied from a tutorial.
-
+ 
 ## Tech stack
-
+ 
 - **Runtime:** Node.js
 - **Framework:** Express
 - **Database:** PostgreSQL (raw `pg` queries, no ORM)
 - **Auth:** `bcrypt` for password hashing, `jsonwebtoken` for session tokens
 - **Frontend:** Vanilla HTML/CSS/JS, served as static files via Express
-
 ## Project structure
-
+ 
 ```
 .
 ├── index.js              # App entry point, route mounting, middleware setup
@@ -32,7 +30,8 @@ This was built to learn backend fundamentals properly — every route was writte
 ├── middleware/
 │   └── auth.js            # JWT verification middleware for protected routes
 ├── routes/
-│   └── auth.js             # /auth/register and /auth/login
+│   ├── auth.js              # /auth/register and /auth/login
+│   └── posts.js             # /posts — list and create posts
 ├── public/                 # Static frontend files, served at the root
 │   ├── index.html
 │   ├── register.html
@@ -42,16 +41,16 @@ This was built to learn backend fundamentals properly — every route was writte
 │   └── common.js
 └── .env                     # Environment variables (not committed)
 ```
-
+ 
 ## Setup
-
+ 
 1. **Clone the repo and install dependencies:**
-   ```bash
+```bash
    npm install
-   ```
-
+```
+ 
 2. **Set up PostgreSQL** — create a database and a `users` table:
-   ```sql
+```sql
    CREATE TABLE users (
      id SERIAL PRIMARY KEY,
      name TEXT NOT NULL,
@@ -59,26 +58,37 @@ This was built to learn backend fundamentals properly — every route was writte
      password TEXT NOT NULL,
      created_at TIMESTAMP DEFAULT NOW()
    );
-   ```
-
-3. **Create a `.env` file** in the project root:
-   ```
+```
+ 
+3. **Add the `post` table**, with a foreign key linking each post to a user:
+```sql
+   CREATE TABLE post (
+     id SERIAL PRIMARY KEY,
+     title TEXT NOT NULL,
+     content TEXT,
+     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+     created_at TIMESTAMP DEFAULT NOW()
+   );
+```
+   `user_id` references `users(id)` — Postgres will reject an insert if `user_id` doesn't match a real user, and `ON DELETE CASCADE` means a user's posts are deleted automatically if that user is deleted.
+ 
+4. **Create a `.env` file** in the project root:
+```
    DATABASE_URL=postgres://user:password@localhost:5432/your_db_name
    JWT_SECRET=a-long-random-secret-string
-   ```
+```
    If your database password contains special characters (like `@`), URL-encode them (`@` becomes `%40`).
-
-4. **Run the server:**
-   ```bash
+ 
+5. **Run the server:**
+```bash
    node index.js
    # or, with auto-restart on changes:
    npx nodemon index.js
-   ```
-
-5. **Open the app** at `http://localhost:3000` in your browser.
-
+```
+ 
+6. **Open the app** at `http://localhost:3000` in your browser.
 ## API routes
-
+ 
 | Method | Route               | Auth required | Description                     |
 |--------|----------------------|----------------|----------------------------------|
 | POST   | `/auth/register`     | No             | Create a new user (hashes password) |
@@ -87,21 +97,24 @@ This was built to learn backend fundamentals properly — every route was writte
 | POST   | `/users`             | No             | Create a user (no auth, separate from register) |
 | PUT    | `/users/:id`         | Yes (Bearer token) | Update a user's name/email   |
 | DELETE | `/users/:id`         | Yes (Bearer token) | Delete a user                |
-
+| GET    | `/posts`             | No             | List all posts, joined with the author's name |
+| POST   | `/posts`             | Yes (Bearer token) | Create a post for a given `user_id` |
+ 
 For protected routes, send the token from `/auth/login` in the request header:
 ```
 Authorization: Bearer <token>
 ```
-
+ 
 ## Why these design choices
-
+ 
 - **Parameterized queries (`$1`, `$2`, ...)** instead of string concatenation — prevents SQL injection, since user input is always treated as data, never as part of the SQL command itself.
 - **`bcrypt` for password hashing** — one-way hashing with a built-in salt, so even identical passwords produce different hashes, and the original password can never be recovered from the database.
 - **JWT for sessions** — stateless authentication; the server doesn't need to store session data, it just verifies the token's signature on each protected request.
 - **`404` vs `400` vs `401`** — status codes are used deliberately: `400` for malformed requests (missing fields), `401` for authentication failures (missing/invalid token or wrong credentials), `404` when a valid-looking id doesn't match any row.
-
+- **`post.user_id REFERENCES users(id)`** — a real foreign key, not just a plain integer column. The database itself rejects a post with a `user_id` that doesn't exist, rather than relying on the application code to catch that.
+- **`JOIN` in `GET /posts`** — posts are returned with the author's name attached (`JOIN post ON post.user_id = users.id`), instead of the frontend having to make a second request to look up each author separately.
 ## Known limitations (next steps)
-
+ 
 This is a learning project, not a production system. Things deliberately left out for now:
 - No refresh tokens — the JWT simply expires after a fixed time
 - No rate limiting on login attempts
