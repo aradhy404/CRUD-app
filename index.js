@@ -32,14 +32,18 @@ app.get("/", (req, res) => {
 app.get('/users', async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM users")
-        res.json(result.rows)
+        res.status(200).json({
+            success:true,
+            message:"retrived data",
+            data:{ id, name, email}
+        })
 
 
     } catch (err) {
         console.error(err)
         res.status(500).json({ error: "failed to read the users file" })
     }
-}).post('/users', async (req, res) => {
+}).post('/users', authMiddleware, async (req, res) => {
     try {
 
         const { name, email } = req.body
