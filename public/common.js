@@ -1,7 +1,7 @@
 // Shared helpers used by every page.
 
 function getBaseUrl() {
-  return localStorage.getItem("apiBaseUrl") || "http://localhost:3000";
+  return localStorage.getItem("apiBaseUrl") || "";
 }
 function setBaseUrl(url) {
   localStorage.setItem("apiBaseUrl", url.replace(/\/+$/, ""));
@@ -17,7 +17,7 @@ function clearToken() {
 }
 
 async function apiFetch(path, options = {}) {
-  const res = await fetch(getBaseUrl() + path, options);
+  const res = await fetch(getBaseUrl() + "/auth/login");
   let body = null;
   try { body = await res.json(); } catch (e) { /* no body */ }
   return { res, body };
