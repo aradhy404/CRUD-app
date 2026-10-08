@@ -4,6 +4,7 @@ import  pool  from "./database/db.js"
 import authroutes from "./routes/auth.js"
 import authMiddleware from "./middleware/auth.js"
 import postroute from "./routes/post.js"
+import "dotenv/config"
 
 
 const app = express()
@@ -18,7 +19,7 @@ app.use('/auth', authroutes)
 
 
 
-const port = 3000
+const port = process.env.PORT || 3000
 
 
 
