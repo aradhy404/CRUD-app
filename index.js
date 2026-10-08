@@ -22,6 +22,12 @@ app.use('/auth', authroutes)
 const port = process.env.PORT || 3000
 
 
+app.get("/", (req, res) => {
+    res.json({
+        message: "Backend is running"
+    });
+});
+
 
 app.get('/users', async (req, res) => {
     try {

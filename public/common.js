@@ -17,9 +17,22 @@ function clearToken() {
 }
 
 async function apiFetch(path, options = {}) {
-  const res = await fetch(getBaseUrl() + "/auth/login");
+  const res = await fetch(getBaseUrl() + path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
   let body = null;
-  try { body = await res.json(); } catch (e) { /* no body */ }
+
+  try {
+    body = await res.json();
+  } catch (e) {
+    // No JSON response
+  }
+
   return { res, body };
 }
 
